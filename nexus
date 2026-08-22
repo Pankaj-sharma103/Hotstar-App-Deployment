@@ -1,0 +1,77 @@
+Setup Nexus and integrate with Jenkins :
+1.update system package
+#sudo apt-get update
+2.Install openjdk 17 on ubuntu
+#sudo apt install openjdk-17-jdk openjdk-17-jre -y
+3.Download the SonaType Nexus on ubuntu in /opt directory
+#cd /opt
+Open Sonatype's official download page: Sonatype Nexus Repository Downloads
+Choose: Unix/Linux x86-64 | Nexus Repository 3.93.1
+Then copy the actual download URL from the page and use wget on your EC2.
+#wget https://download.sonatype.com/nexus/3/nexus-3.95.0-07-linux-x86_64.tar.gz.sha256
+
+4.Extract the nexus repository setup in /opt directory
+#tar -xvzf nexus-3.95.0-07-linux-x86_64.tar.gz
+
+5.Rename the extracted nexus
+#mv /opt/nexus-3.95.0 /opt/nexus
+
+6.As security practice,  not to run nexus service using root user --> create new user as nexus to run nexus service
+#sudo adduser nexus
+
+7.To give permission to this user -->add user in the sudoers file
+#visudo
+nexus  ALL=(ALL) 	NOPASSWD: ALL
+
+8.Give permission to nexus file and nexus directory to nexus user
+#chown -R nexus:nexus /opt/nexus
+#chown -R nexus:nexus /opt/sonatype-work
+
+9.To run nexus as service at boot time , open /opt/nexus/bin/nexus.rc
+#vi /opt/nexus/bin/nexus.rc
+run_as_user="nexus"
+save ":wq!"
+
+10 nexus need more memory and more cpu to run but java does not assign by default this memory to nexus
+So we need to tell this in nexus.vmoptions file
+For this we add some values like-
+
+-Xms1024m
+-Xmx1024m
+-XX:MaxDirectMemorySize=1024m
+-XX:+UnlockDiagnosticVMOptions
+-XX:-OmitStackTraceInFastThrow
+-Djava.net.preferIPv4Stack=true
+-Dkaraf.home=.
+-Dkaraf.base=.
+-Dkaraf.etc=etc/karaf
+-Djava.util.logging.config.file=etc/karaf/java.util.logging.properties
+-Dkaraf.data=./sonatype-work/nexus3
+-Dkaraf.log=./sonatype-work/nexus3/log
+-Djava.io.tmpdir=./sonatype-work/nexus3/tmp
+
+11.For a proper DevOps lab, don't manually start Nexus every time. Create a systemd service:
+
+sudo vi /etc/systemd/system/nexus.service
+
+
+[Unit]
+Description=Nexus Repository
+After=network.target
+
+[Service]
+Type=forking
+LimitNOFILE=65536
+User=nexus
+Group=nexus
+ExecStart=/opt/nexus/bin/nexus start
+ExecStop=/opt/nexus/bin/nexus stop
+Restart=on-abort
+
+[Install]
+WantedBy=multi-user.target
+
+#systemctl start nexus
+#systemctl status nexus
+
+Nexus works on port number 8081

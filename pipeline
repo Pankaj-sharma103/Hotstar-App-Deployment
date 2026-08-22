@@ -1,0 +1,53 @@
+pipeline{
+    agent any
+    stages{
+        stage('checkout'){
+            steps{
+                git 'https://github.com/Pankaj-sharma103/java-project-maven-new.git'
+            }
+        }
+        stage('compile'){
+            steps{
+                sh 'mvn compile'
+            }
+        }
+        stage('test'){
+            steps{
+                sh 'mvn test'
+            }
+        }
+        stage('SonarQube'){
+            steps{
+                withSonarQubeEnv('SonarQube'){
+                    sh 'mvn org.sonarsource.scanner.maven:sonar-maven-plugin:sonar'
+                }
+            }
+        }
+        stage('package'){
+            steps{
+                sh 'mvn clean package'
+            }
+        }
+        stage('Nexus'){
+            steps{
+                nexusArtifactUploader artifacts: [[artifactId: 'myapp', classifier: '', file: 'target/myapp.war', type: '.war']], credentialsId: 'nCred', groupId: 'in.reyaz', nexusUrl: '13.232.30.253:8081', nexusVersion: 'nexus3', protocol: 'http', repository: 'hotstarapp', version: '8.3.3-SNAPSHOT'
+            }
+        }
+        stage('Artiface store at s3'){
+            steps{
+                withAWS(credentials: 's3Cred', region:'ap-south-1'){
+                    s3Upload(
+                        file: 'target/myapp.war',
+                        bucket: 'artifact-store-bucket9',
+                        path: 'artifacts/'
+                        )
+                }
+            }
+        }
+        stage('Ansible'){
+                steps{
+                    ansiblePlaybook credentialsId: 'linuxCred', disableHostKeyChecking: true, installation: 'ansible', inventory: '/etc/ansible/hosts', playbook: '/etc/ansible/deploy.yml', vaultTmpPath: ''
+                }
+            }
+    }
+}

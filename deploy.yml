@@ -1,0 +1,9 @@
+---
+- name: Deploy Hostar Application
+  hosts: all
+  become: yes
+  tasks:
+    - name: Copy artifact to webapps directory of Tomcat
+      copy:
+        src: /var/lib/jenkins/workspace/deployjob/target/myapp.war
+        dest: /home/ec2-user/apache-tomcat-10.1.59/webapps 

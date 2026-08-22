@@ -1,0 +1,44 @@
+---
+- name: SetUP Tomcat Playbook
+  hosts: all
+  become: yes
+  tasks:
+    - name: Install Java
+      yum:
+        name: java-21-amazon-corretto
+        state: present
+
+    - name: Download Tomcat 
+      get_url:
+        url: https://dlcdn.apache.org/tomcat/tomcat-10/v10.1.59/bin/apache-tomcat-10.1.59.tar.gz
+        dest: /home/ec2-user/
+
+    - name: Extract files
+      command: tar -xvzf /home/ec2-user/apache-tomcat-10.1.59.tar.gz -C /home/ec2-user/
+
+    - name: Configure User
+      blockinfile:
+        path: /home/ec2-user/apache-tomcat-10.1.59/conf/tomcat-users.xml
+        insertbefore: "</tomcat-users>"
+        block: |
+          <role rolename="manager-gui"/>
+          <role rolename="manager-script"/>
+          <user username="tomcat" password="root123" roles="manager-gui,manager-script"/>
+
+    - name: Configure context.xml
+      lineinfile:
+        path: /home/ec2-user/apache-tomcat-10.1.59/webapps/manager/META-INF/context.xml
+        regexp: '.*RemoteCIDRValve*.'
+        state: absent
+
+    - name: Configure context.xml
+      lineinfile:
+        path: /home/ec2-user/apache-tomcat-10.1.59/webapps/manager/META-INF/context.xml
+        regexp: '.*allow=*.'
+        state: absent
+
+    - name: Start Tomcat
+      command: sh /home/ec2-user/apache-tomcat-10.1.59/bin/startup.sh
+
+
+
