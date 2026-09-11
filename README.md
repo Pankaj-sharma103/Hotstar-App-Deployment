@@ -1,298 +1,195 @@
-Jenkins CI/CD Pipeline with Tomcat, SonarQube & Nexus
-This repository contains the automation scripts, Ansible playbooks, and Jenkins Pipeline used to implement an end-to-end CI/CD pipeline for deploying a Java WAR application on Apache Tomcat.
-The project automates the process from source-code checkout to application deployment, while integrating code quality analysis and artifact management.
-🏗️ Architecture
+# Jenkins CI/CD Pipeline with Tomcat, SonarQube & Nexus
+
+This repo holds the scripts, Ansible playbooks, and Jenkins pipeline I used to build an end-to-end CI/CD setup for deploying a Java WAR application on Apache Tomcat.
+
+The idea is to automate everything from pulling the source code to getting it live on the server, while also running code quality checks and keeping build artifacts organized along the way.
+
+## Architecture
+
+```
 Developer
-    │
-    ▼
-  GitHub
-    │
-    ▼
- Jenkins
-    │
-    ├──────────────► SonarQube
-    │                 Code Quality Analysis
-    │
-    ├──────────────► Maven
-    │                 Build & Package
-    │
-    ├──────────────► Nexus
-    │                 Artifact Repository
-    │
-    ▼
- Apache Tomcat
-    │
-    ▼
- Java WAR Application
-📁 Repository Contents
-File	Description
-deploy.yml	Ansible playbook to copy the generated WAR file to the Tomcat webapps directory
-jenkins.sh	Shell script to install and configure Jenkins
-nexus.sh	Shell script to install and configure Nexus Repository
-pipeline.groovy	Jenkins Pipeline script covering checkout, build, SonarQube analysis, artifact management, and deployment
-sonarqube-setup.sh	Shell script to install and configure SonarQube
-tomcat.sh	Shell script to install and configure Apache Tomcat
-tomcat.yml	Ansible playbook to automate Tomcat installation and configuration
+   │
+   ▼
+ GitHub
+   │
+   ▼
+Jenkins ──────► SonarQube (code quality analysis)
+   │
+   ├──────────► Maven (build & package)
+   │
+   ├──────────► Nexus (artifact repository)
+   │
+   ▼
+Apache Tomcat
+   │
+   ▼
+Java WAR Application
+```
 
-Technologies Used
-AWS EC2 – Infrastructure
-GitHub – Source Code Management
-Jenkins – CI/CD Automation
-Maven – Build & Packaging
-SonarQube – Static Code Quality Analysis
-Nexus Repository – Artifact Management
-Apache Tomcat – Application Server
-Ansible – Configuration Management & Deployment
-Shell Scripting – Server Setup Automation
-Java – Application Runtime
+## What's in this repo
 
-CI/CD Pipeline Flow
+| File | What it does |
+|---|---|
+| `jenkins.sh` | Installs and configures Jenkins |
+| `nexus.sh` | Installs and configures Nexus Repository |
+| `sonarqube-setup.sh` | Installs and configures SonarQube |
+| `tomcat.sh` | Installs and configures Apache Tomcat |
+| `tomcat.yml` | Ansible playbook to automate Tomcat setup |
+| `deploy.yml` | Ansible playbook that copies the built WAR file into Tomcat's `webapps` directory |
+| `pipeline.groovy` | The Jenkins pipeline script — checkout, build, SonarQube analysis, artifact upload, and deployment |
 
-The Jenkins pipeline follows these stages:
+## Tech stack
 
-1. Checkout
+- **AWS EC2** – infrastructure
+- **GitHub** – source control
+- **Jenkins** – CI/CD orchestration
+- **Maven** – build & packaging
+- **SonarQube** – static code analysis
+- **Nexus Repository** – artifact storage
+- **Apache Tomcat** – application server
+- **Ansible** – configuration & deployment automation
+- **Shell scripting** – server setup
+- **Java** – application runtime
 
-Jenkins pulls the latest application source code from GitHub.
+## How the pipeline works
 
-GitHub → Jenkins
-2. Build
+1. **Checkout** — Jenkins pulls the latest code from GitHub.
+2. **Build** — Maven compiles the code and packages it into a WAR file.
+3. **SonarQube analysis** — the code gets scanned for quality issues and vulnerabilities.
+4. **Quality gate** — the pipeline won't move forward unless the code passes SonarQube's quality gate.
+5. **Artifact upload** — the WAR file gets pushed to Nexus for version-controlled storage.
+6. **Deployment** — Ansible takes the WAR file from Nexus and drops it into Tomcat's `webapps` folder.
 
-Maven compiles the source code and packages the application as a WAR file.
+## What each script actually does
 
-Source Code → Maven → myapp.war
-3. SonarQube Analysis
+**`jenkins.sh`**
+Installs Java, sets up the Jenkins repo, installs Jenkins itself, and starts the service.
 
-The application code is analyzed using SonarQube to identify code-quality issues and vulnerabilities.
+**`nexus.sh`**
+Installs the right Java version, downloads Nexus, sets up a dedicated user with proper permissions, and starts it up. Nexus ends up being the central place all built artifacts live.
 
-Source Code → SonarQube → Quality Analysis
-4. Quality Gate
+**`sonarqube-setup.sh`**
+Installs Java, downloads and extracts SonarQube, creates a dedicated user, sets permissions, and starts the service.
 
-The pipeline checks the SonarQube Quality Gate before continuing with the deployment process.
+**`tomcat.sh`**
+Installs Java, downloads and extracts Tomcat, handles configuration and permissions, and starts it.
 
-5. Artifact Management
+**`tomcat.yml`**
+Same idea as `tomcat.sh` but done through Ansible instead of a shell script — installs packages, sets up Tomcat, configures users, and starts the service. Run it with:
 
-The generated WAR file is uploaded to Nexus Repository for centralized artifact storage and version management.
-
-myapp.war → Nexus Repository
-6. Deployment
-
-The WAR file is deployed to the Tomcat server using Ansible.
-
-Jenkins → Ansible → Tomcat → webapps/
-📜 Scripts & Playbooks
-jenkins.sh
-
-Automates the Jenkins server setup, including the required packages and Jenkins installation.
-
-Purpose:
-
-Install Java
-Configure Jenkins repository
-Install Jenkins
-Enable Jenkins service
-Start Jenkins
-nexus.sh
-
-Automates the installation and initial configuration of Nexus Repository.
-
-Purpose:
-
-Install required Java version
-Download Nexus
-Configure Nexus user
-Set permissions
-Start Nexus
-
-Nexus is used as the centralized repository for storing application artifacts.
-
-sonarqube-setup.sh
-
-Automates the SonarQube server setup.
-
-Purpose:
-
-Install required Java version
-Download SonarQube
-Extract the SonarQube archive
-Create a dedicated SonarQube user
-Configure permissions
-Start SonarQube
-tomcat.sh
-
-Shell script for setting up the Apache Tomcat application server.
-
-Purpose:
-
-Install Java
-Download Tomcat
-Extract Tomcat
-Configure Tomcat
-Set required permissions
-Start Tomcat
-tomcat.yml
-
-Ansible playbook for automated Tomcat installation and configuration.
-
-Purpose:
-
-Install required packages
-Download/install Tomcat
-Configure Tomcat
-Create/configure users
-Start Tomcat service
-
-Example execution:
-
+```bash
 ansible-playbook tomcat.yml
-deploy.yml
+```
 
-Ansible deployment playbook used to copy the generated WAR file into Tomcat's webapps directory.
+**`deploy.yml`**
+Handles the actual deployment: takes the WAR file Jenkins built and copies it into Tomcat's `webapps` directory.
 
-Example:
-
+```bash
 ansible-playbook deploy.yml
+```
 
-The deployment flow is:
+Flow: `Jenkins → WAR file → Ansible → Tomcat/webapps`
 
-Jenkins
-   │
-   ▼
-Generated WAR
-   │
-   ▼
-Ansible
-   │
-   ▼
-Tomcat/webapps
-pipeline.groovy
+**`pipeline.groovy`**
+Ties the whole thing together as a Jenkins pipeline:
 
-The Jenkins Pipeline script automates the complete CI/CD workflow.
+```
+Checkout → Maven Build → SonarQube Analysis → Quality Gate → Nexus Upload → Ansible Deploy → Tomcat
+```
 
-Typical pipeline stages include:
+Instead of running each of these steps by hand, Jenkins runs them automatically every time.
 
-Checkout
-   ↓
-Maven Build
-   ↓
-SonarQube Analysis
-   ↓
-Quality Gate
-   ↓
-Nexus Upload
-   ↓
-Ansible Deployment
-   ↓
-Tomcat
+## AWS setup
 
-The pipeline provides a repeatable and automated deployment process instead of manually performing each step.
+I split this across four EC2 instances so each tool runs independently:
 
-☁️ AWS Infrastructure
+| Instance | Role |
+|---|---|
+| EC2-1 | Jenkins |
+| EC2-2 | SonarQube |
+| EC2-3 | Nexus |
+| EC2-4 | Tomcat |
 
-The project can be deployed using multiple EC2 instances:
+Keeping them separate makes the whole thing a lot easier to manage and troubleshoot.
 
-EC2-1 → Jenkins
-EC2-2 → SonarQube
-EC2-3 → Nexus
-EC2-4 → Tomcat
+## Before you run anything
 
-This separation allows each DevOps tool to run independently and makes the architecture easier to manage.
+Make sure the following are configured in Jenkins:
 
-🔐 Required Configuration
+- GitHub credentials / webhook
+- Maven and JDK installations
+- SonarQube server + auth token
+- Nexus credentials
+- SSH credentials for the Tomcat server
+- Ansible inventory/configuration
 
-Before running the pipeline, configure the following in Jenkins:
+Also double check your EC2 security group rules allow the ports below:
 
-GitHub credentials/webhook
-Maven
-JDK
-SonarQube server
-SonarQube authentication token
-Nexus credentials
-SSH credentials for the Tomcat server
-Ansible configuration/inventory
+| Service | Port |
+|---|---|
+| Jenkins | 8080 |
+| Tomcat | 8080 |
+| Nexus | 8081 |
+| SonarQube | 9000 |
+| SSH | 22 |
 
-Also make sure the required AWS EC2 Security Group ports are configured appropriately.
+## Getting started
 
-Typical ports:
-
-Service	Port
-Jenkins	8080
-Tomcat	8080
-Nexus	8081
-SonarQube	9000
-SSH	22
-▶️ How to Use
-1. Clone the repository
+**1. Clone the repo**
+```bash
 git clone <repository-url>
 cd <repository-directory>
-2. Set up the servers
+```
 
-Run the required setup scripts on their respective EC2 instances:
+**2. Set up the servers**
 
+Run each setup script on its respective EC2 instance:
+
+```bash
+chmod +x *.sh
 ./jenkins.sh
 ./nexus.sh
 ./sonarqube-setup.sh
 ./tomcat.sh
+```
 
-Make scripts executable if required:
+**3. Configure Tomcat with Ansible**
 
-chmod +x *.sh
-3. Configure Tomcat with Ansible
+Update the inventory file with your Tomcat server details, then run:
 
-Update the Ansible inventory with the Tomcat server details and run:
-
+```bash
 ansible-playbook tomcat.yml
-4. Configure Deployment
+```
 
-Update the inventory and WAR-file path required by deploy.yml, then run:
+**4. Set up deployment**
 
+Update the inventory and WAR file path in `deploy.yml`, then run:
+
+```bash
 ansible-playbook deploy.yml
-5. Configure Jenkins Pipeline
+```
 
-Create a Jenkins Pipeline job and use the pipeline.groovy script.
+**5. Configure the Jenkins pipeline**
 
-Configure the required credentials and integrations for:
+Create a new Jenkins pipeline job using `pipeline.groovy`, and connect it to GitHub, SonarQube, Nexus, and Tomcat/Ansible.
 
-GitHub
-SonarQube
-Nexus
-Tomcat/Ansible
-6. Run the Pipeline
+**6. Run it**
 
-Once configured, Jenkins automatically performs:
+Once everything's wired up, Jenkins takes care of the rest — checkout, build, analysis, quality gate, artifact upload, and deployment, all in one go.
 
-Checkout
-   ↓
-Build
-   ↓
-Code Analysis
-   ↓
-Quality Gate
-   ↓
-Artifact Upload
-   ↓
-Deployment
-🎯 Project Objective
+## Why I built this
 
-The main objective of this project is to demonstrate a practical DevOps CI/CD implementation using industry-standard tools.
+I wanted to get real, hands-on experience with a full DevOps pipeline rather than just reading about one — automating the build, quality checks, artifact management, and deployment instead of doing any of it manually.
 
-It reduces manual deployment work by automating:
+## What I learned
 
-Application builds
-Code quality checks
-Artifact management
-Server configuration
-Application deployment
-📌 Key Learning Outcomes
-
-Through this project, I gained hands-on experience with:
-
-Jenkins CI/CD pipelines
-GitHub integration
-Maven build automation
-SonarQube integration
-Nexus artifact management
-Apache Tomcat deployment
-Ansible automation
-Shell scripting
-AWS EC2 infrastructure
-End-to-end application deployment
+- Setting up and running Jenkins CI/CD pipelines
+- Integrating GitHub into an automated workflow
+- Build automation with Maven
+- Wiring SonarQube into a pipeline for code quality gates
+- Managing artifacts with Nexus
+- Deploying to Apache Tomcat
+- Writing and running Ansible playbooks
+- Shell scripting for server setup
+- Working with AWS EC2 infrastructure
+- Putting together a full end-to-end deployment process
